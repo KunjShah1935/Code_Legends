@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <div class="main">
+        <div class="left">
+            <div class="logo"></div>
+            <h2>Welcome Back to QuizIQ</h2>
+            <p class="content"> Whether you're a student preparing for your next big challenge or a teacher ready to
+                guide and evaluate,
+                your personalized dashboard is just a login away. Dive into powerful tools, insightful results, and
+                engaging quizzes —
+                all in one place.</p>
+            <p class="content1">Quiz.com</p>
+        </div>
+        <div class="right">
+            <h2>Login</h2>
+            <p>Welcome back! Please enter your details.</p>
+            <form action="/login" method="post" onsubmit="handleLogin(event)">
+                <div class="form-group>
+                    <label for=" username" id="username-label">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                    <br>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <br>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <label for="remember-me" id="rm">Remember me:</label>
+                            <input type="checkbox" id="remember-me" name="remember-me">
+                        </div>
+                        <p><a href="/forgot-password" id="fp">Forgot your password?</a></p>
+                    </div>
+                    <br>
+                    <div class="loginbtn">
+                        <button type="submit" class="logbtn"
+                            onclick="window.location.href='pages/student/dashboards.html'">Login</button>
+                    </div>
+
+                    <p id="dha">Don't have an account? <a href="signup.html">Register here</a>.</p>
+
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+     
+
+
+
+
+
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault(); // stop form from submitting
+            // You can also add basic checks here
+            window.location.href = 'student/dashboards.html';
+        }
+    </script>
+
+</body>
+
+</html>
