@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Knowledge Quiz</title>
+    <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+    <div class="main">
+        <h2 id="quiz-title">General Knowledge Quiz</h2>
+        <div id="quiz-container">
+            <div id="question-section" style="display:none;">
+                <div id="question-text"></div>
+                <form id="answer-form">
+                    <div id="options"></div>
+                    <button type="submit">Next</button>
+                </form>
+            </div>
+            <div id="result-section" style="display:none;">
+                <h3>Your Score: <span id="score"></span></h3>
+                <div id="feedback"></div>
+                <p>Thank you for taking the quiz!</p>
+                <a href="dashboards.html">Back to Dashboard</a>
+            </div>
+            <div id="loading">Loading quiz...</div>
+        </div>
+    </div>
+    <script>
+    const quiz_id = 2;
+    const token = localStorage.getItem('token');
+    let questions = [];
+    let current = 0;
+    let answers = [];
+    let score = 0;
+
+    async function fetchQuiz() {
+        const res = await fetch(`http://localhost:4000/api/questions/${quiz_id}`);
+        questions = await res.json();
+        if (!Array.isArray(questions) || questions.length === 0) {
+            document.getElementById('loading').textContent = 'No questions found for this quiz.';
+            return;
+        }
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('question-section').style.display = '';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[current];
+        document.getElementById('question-text').textContent = q.question_text;
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+        q.options.forEach((opt, idx) => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type=\"radio\" name=\"option\" value=\"${idx}\" required> ${opt}`;
+            optionsDiv.appendChild(label);
+            optionsDiv.appendChild(document.createElement('br'));
+        });
+    }
+
+    document.getElementById('answer-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selected = document.querySelector('input[name="option"]:checked');
+        answers.push(Number(selected.value));
+        if (questions[current].correct_option === Number(selected.value)) {
+            score++;
+        }
+        current++;
+        if (current < questions.length) {
+            showQuestion();
+        } else {
+            submitQuiz();
+        }
+    });
+
+    async function submitQuiz() {
+        if (!token) {
+            alert('You must be logged in to submit a quiz.');
+            window.location.href = '../login.html';
+            return;
+        }
+        await fetch('http://localhost:4000/api/responses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ quiz_id, answers })
+        });
+        document.getElementById('question-section').style.display = 'none';
+        document.getElementById('result-section').style.display = '';
+        document.getElementById('score').textContent = `${score} / ${questions.length}`;
+        let feedback = '';
+        if (score === questions.length) {
+            feedback = 'Excellent! You got all questions right!';
+        } else if (score >= questions.length / 2) {
+            feedback = 'Good job! You got more than half correct.';
+        } else {
+            feedback = 'Keep practicing! You can do better next time.';
+        }
+        document.getElementById('feedback').textContent = feedback;
+    }
+
+    fetchQuiz();
+    </script>
+</body>
+</html> 

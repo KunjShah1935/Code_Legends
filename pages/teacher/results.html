@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Results</title>
+    <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+    <div class="main">
+        <h2>Quiz Results</h2>
+        <div id="results-container">Loading...</div>
+        <a href="dashboard.html">Back to Dashboard</a>
+    </div>
+    <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const quiz_id = urlParams.get('quiz_id');
+    const token = localStorage.getItem('token');
+    async function loadResults() {
+        if (!token) {
+            document.getElementById('results-container').textContent = 'You must be logged in as a teacher.';
+            return;
+        }
+        const res = await fetch(`http://localhost:4000/api/responses/all/${quiz_id}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!Array.isArray(data)) {
+            document.getElementById('results-container').textContent = 'No results found or not authorized.';
+            return;
+        }
+        let html = '<table><tr><th>Student ID</th><th>Answers</th><th>Submitted At</th></tr>';
+        data.forEach(r => {
+            html += `<tr><td>${r.user_id}</td><td>${r.answers.join(', ')}</td><td>${r.submitted_at}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('results-container').innerHTML = html;
+    }
+    loadResults();
+    </script>
+</body>
+</html> 

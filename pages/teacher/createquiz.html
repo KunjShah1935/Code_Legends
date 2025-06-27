@@ -17,7 +17,7 @@
                 <a href="dashboard.html" class="logo1">Dashboard</a>
                 <a href="createquiz.html" class="logo1">Create quiz</a>
                 <a href="viewresults.html" class="logo1">View Results</a>
-                <a href="logout.html" class="logo1">Logout</a>
+                <a href="../login.html" class="logo1">Logout</a>
             </div>
         </div>
         </div>
@@ -51,6 +51,35 @@
             </form>
         </div>
     </main>
+
+    <script>
+    document.querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('quiz-title').value;
+        const description = document.getElementById('quiz-description').value;
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You must be logged in to create a quiz.');
+            return;
+        }
+        try {
+            const res = await fetch('http://localhost:4000/api/quizzes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ title, description })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Quiz creation failed');
+            alert('Quiz created successfully! Now add questions.');
+            window.location.href = `addQuestion.html?quiz_id=${data.id}`;
+        } catch (err) {
+            alert('Quiz creation failed: ' + err.message);
+        }
+    });
+    </script>
 </body>
 
 </html>

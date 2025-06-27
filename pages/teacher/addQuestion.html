@@ -12,7 +12,7 @@
         <div class="navbar">
             <img src="/assets/logo.png" alt="Logo" class="logo" />
             <div class="nav-links">
-                <a href="dashboards.html" class="logo1">Dashboard</a>   
+                <a href="dashboard.html" class="logo1">Dashboard</a>   
                 <a href="../login.html" class="logo1">Logout</a>
             </div>
         </div>
@@ -64,6 +64,53 @@
             }
         });
         </script>
+
+    <script>
+    document.querySelector('form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const urlParams = new URLSearchParams(window.location.search);
+        const quiz_id = Number(urlParams.get('quiz_id'));
+        if (!quiz_id) {
+            alert('Quiz ID not found in the URL. Please return to the dashboard and select a quiz to add questions.');
+            return;
+        }
+        const question_text = document.getElementById('question-text').value;
+        const options = [
+            document.getElementById('option-a').value,
+            document.getElementById('option-b').value,
+            document.getElementById('option-c').value,
+            document.getElementById('option-d').value
+        ];
+        const correct_option = ['A','B','C','D'].indexOf(document.getElementById('correct-option').value);
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You must be logged in to add a question.');
+            return;
+        }
+        try {
+            const res = await fetch('http://localhost:4000/api/questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ quiz_id, question_text, options, correct_option })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Question addition failed');
+            alert('Question added successfully!');
+            // Clear form
+            document.getElementById('question-text').value = '';
+            document.getElementById('option-a').value = '';
+            document.getElementById('option-b').value = '';
+            document.getElementById('option-c').value = '';
+            document.getElementById('option-d').value = '';
+            document.getElementById('correct-option').selectedIndex = 0;
+        } catch (err) {
+            alert('Question addition failed: ' + err.message);
+        }
+    });
+    </script>
 
     </main>
 </body>
