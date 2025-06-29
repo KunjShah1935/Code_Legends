@@ -22,6 +22,7 @@
             <div id="quiz-container">
                 <div id="question-section" style="display:none;">
                     <div id="question-text" class="question-text"></div>
+                    <div id="timer" style="font-size: 1.2em; color: #d9534f; margin-bottom: 10px; display:none;"></div>
                     <form id="answer-form">
                         <div id="options" class="options"></div>
                         <button type="submit" class="button1">Next</button>
@@ -45,21 +46,37 @@
     let current = 0;
     let answers = [];
     let score = 0;
+    let time_per_question = 30;
+    let timerInterval = null;
 
     async function fetchQuiz() {
         const res = await fetch(`http://localhost:4000/api/questions/${quiz_id}`);
-        questions = await res.json();
-        if (!Array.isArray(questions) || questions.length === 0) {
+        const data = await res.json();
+        if (!data || !Array.isArray(data.questions) || data.questions.length === 0) {
             document.getElementById('loading').textContent = 'No questions found for this quiz.';
             return;
         }
-        document.getElementById('quiz-title').textContent = `Quiz #${quiz_id}`;
+        questions = data.questions;
+        time_per_question = (data.quiz && data.quiz.time_per_question) ? data.quiz.time_per_question : 30;
+        document.getElementById('quiz-title').textContent = data.quiz && data.quiz.title ? data.quiz.title : `Quiz #${quiz_id}`;
         document.getElementById('loading').style.display = 'none';
         document.getElementById('question-section').style.display = '';
         showQuestion();
     }
 
     function showQuestion() {
+        clearInterval(timerInterval);
+        let timeLeft = time_per_question;
+        document.getElementById('timer').style.display = '';
+        document.getElementById('timer').textContent = `Time left: ${timeLeft}s`;
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').textContent = `Time left: ${timeLeft}s`;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                autoMove();
+            }
+        }, 1000);
         const q = questions[current];
         document.getElementById('question-text').textContent = q.question_text;
         const optionsDiv = document.getElementById('options');
@@ -73,11 +90,31 @@
         });
     }
 
+    function autoMove() {
+        // If user hasn't selected, record as -1
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (selected) {
+            answers.push(Number(selected.value));
+            if (questions[current].correct_option === Number(selected.value)) {
+                score++;
+            }
+        } else {
+            answers.push(-1);
+        }
+        current++;
+        if (current < questions.length) {
+            showQuestion();
+        } else {
+            submitQuiz();
+        }
+    }
+
     document.getElementById('answer-form').addEventListener('submit', function(e) {
         e.preventDefault();
+        clearInterval(timerInterval);
         const selected = document.querySelector('input[name="option"]:checked');
-        answers.push(Number(selected.value));
-        if (questions[current].correct_option === Number(selected.value)) {
+        answers.push(selected ? Number(selected.value) : -1);
+        if (selected && questions[current].correct_option === Number(selected.value)) {
             score++;
         }
         current++;

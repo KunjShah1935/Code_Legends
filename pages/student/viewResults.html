@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Results</title>
+    <link rel="stylesheet" href="../../css/style1.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <img src="/assets/logo.png" alt="Logo" class="logo" />
+            <div class="nav-links">
+                <a href="dashboards.html" class="logo1">Dashboard</a>
+                <a href="myresults.html" class="logo1">My Results</a>
+                <a href="myquizzes.html" class="logo1">My Quizzes</a>
+                <a href="createquiz.html" class="logo1">Create Quiz</a>
+                <a href="../login.html" class="logo1">Logout</a>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="box">
+            <h2>Quiz Results</h2>
+            <div id="results-container">Loading results...</div>
+            <div class="button">
+                <a href="myquizzes.html" class="button1">Back to My Quizzes</a>
+            </div>
+        </div>
+    </main>
+    <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const quiz_id = urlParams.get('quiz_id');
+    const token = localStorage.getItem('token');
+    async function loadResults() {
+        if (!quiz_id) {
+            document.getElementById('results-container').innerHTML = 'Quiz ID not found.';
+            return;
+        }
+        if (!token) {
+            document.getElementById('results-container').innerHTML = 'You must be logged in.';
+            return;
+        }
+        try {
+            const res = await fetch(`http://localhost:4000/api/responses/creator/${quiz_id}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (!Array.isArray(data)) {
+                document.getElementById('results-container').innerHTML = 'No results found or not authorized.';
+                return;
+            }
+            if (data.length === 0) {
+                document.getElementById('results-container').innerHTML = 'No students have taken this quiz yet.';
+                return;
+            }
+            let html = '<table>';
+            html += '<tr><th>Student Email</th><th>Score</th><th>Submitted At</th></tr>';
+            data.forEach(r => {
+                html += `<tr><td>${r.email}</td><td>${r.score} / ${r.total_questions}</td><td>${r.submitted_at}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('results-container').innerHTML = html;
+        } catch (err) {
+            document.getElementById('results-container').innerHTML = 'Error loading results: ' + err.message;
+        }
+    }
+    window.addEventListener('load', loadResults);
+    </script>
+</body>
+</html> 

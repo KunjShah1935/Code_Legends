@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Results</title>
+    <link rel="stylesheet" href="../../css/style1.css">
+    <style>
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        .result-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .result-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <img src="/assets/logo.png" alt="Logo" class="logo" />
+            <div class="nav-links">
+                <a href="dashboards.html" class="logo1">Dashboard</a>
+                <a href="myresults.html" class="logo1">My Results</a>
+                <a href="myquizzes.html" class="logo1">My Quizzes</a>
+                <a href="createquiz.html" class="logo1">Create Quiz</a>
+                <a href="../login.html" class="logo1">Logout</a>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="card">
+            <h3>My Results</h3>
+            <div id="my-results">
+                <!-- Results will be loaded here -->
+            </div>
+        </div>
+    </main>
+    <script>
+    async function loadMyResults() {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:4000/api/studentResponses/mine', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const results = await res.json();
+            const resultsList = document.getElementById('my-results');
+            resultsList.innerHTML = '';
+            if (results.length === 0) {
+                resultsList.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+            results.forEach(r => {
+                resultsList.innerHTML += `
+                <div class="result-card">
+                    <h4>${r.quiz_title}</h4>
+                    <p>Score: ${r.score} / ${r.total_questions}</p>
+                    <p>Submitted: ${r.submitted_at}</p>
+                </div>`;
+            });
+        } catch (error) {
+            document.getElementById('my-results').innerHTML = 'Error loading results.';
+        }
+    }
+    window.addEventListener('load', loadMyResults);
+    </script>
+</body>
+</html> 

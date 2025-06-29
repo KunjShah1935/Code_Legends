@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Quizzes</title>
+    <link rel="stylesheet" href="../../css/style1.css">
+    <style>
+        .quiz-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .button-container .button1 {
+            flex: 1;
+            min-width: 120px;
+            max-width: 150px;
+            font-size: 14px;
+            padding: 8px 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .delete-btn {
+            background: #dc3545 !important;
+            color: white !important;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333 !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <img src="/assets/logo.png" alt="Logo" class="logo" />
+            <div class="nav-links">
+                <a href="dashboards.html" class="logo1">Dashboard</a>
+                <a href="myresults.html" class="logo1">My Results</a>
+                <a href="myquizzes.html" class="logo1">My Quizzes</a>
+                <a href="createquiz.html" class="logo1">Create Quiz</a>
+                <a href="../login.html" class="logo1">Logout</a>
+            </div>
+        </div>
+    </header>
+    <main class="main">
+        <div class="card">
+            <h3>My Quizzes</h3>
+            <div id="my-quizzes-list">
+                <!-- My quizzes will be loaded here -->
+            </div>
+        </div>
+    </main>
+    <script>
+    async function loadMyQuizzes() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('http://localhost:4000/api/quizzes/my', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const quizzes = await res.json();
+        const myQuizList = document.getElementById('my-quizzes-list');
+        myQuizList.innerHTML = '';
+        if (quizzes.length === 0) {
+            myQuizList.innerHTML = '<p>No quizzes created yet.</p>';
+            return;
+        }
+        quizzes.forEach(q => {
+            myQuizList.innerHTML += `
+            <div class="box">
+                <p><b>${q.title}</b></p>
+                <p>${q.description || ''}</p>
+                <div class="button-container">
+                    <a href="addQuestion.html?quiz_id=${q.id}" class="button1">Add Question</a>
+                    <a href="viewTest.html?quiz_id=${q.id}" class="button1">View Test</a>
+                    <a href="viewResults.html?quiz_id=${q.id}" class="button1">View Results</a>
+                    <button class="button1" onclick="copyQuizLink(${q.id})">Copy Link</button>
+                    <button onclick="deleteQuiz(${q.id}, '${q.title}')" class="button1 delete-btn">Delete Quiz</button>
+                </div>
+            </div>`;
+        });
+    }
+    function copyQuizLink(quizId) {
+        const baseUrl = window.location.origin;
+        const shareUrl = `${baseUrl}/pages/student/takequiz.html?quiz_id=${quizId}`;
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Quiz link copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Quiz link copied to clipboard!');
+        });
+    }
+    // Delete quiz function
+    async function deleteQuiz(quizId, quizTitle) {
+        if (!confirm(`Are you sure you want to delete the quiz "${quizTitle}"? This will also delete all questions and responses for this quiz.`)) {
+            return;
+        }
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You must be logged in to delete a quiz.');
+            window.location.href = '../login.html';
+            return;
+        }
+        
+        try {
+            const res = await fetch(`http://localhost:4000/api/quizzes/${quizId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+            
+            if (!res.ok) {
+                const data = await res.json();
+                
+                // If token is invalid, redirect to login
+                if (res.status === 401) {
+                    alert('Your session has expired. Please log in again.');
+                    localStorage.removeItem('token');
+                    window.location.href = '../login.html';
+                    return;
+                }
+                
+                throw new Error(data.error || 'Failed to delete quiz');
+            }
+            
+            alert('Quiz deleted successfully!');
+            loadMyQuizzes(); // Reload the quizzes list
+        } catch (err) {
+            alert('Failed to delete quiz: ' + err.message);
+        }
+    }
+    window.addEventListener('load', loadMyQuizzes);
+    </script>
+</body>
+</html> 

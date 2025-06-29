@@ -61,11 +61,13 @@ app.get('/', (req, res) => {
 const authRoutes = require('./routes/auth');
 const quizzesRoutes = require('./routes/quizzes');
 const questionsRoutes = require('./routes/questions');
+const studentResponsesRoutes = require('./routes/studentResponses');
 const responsesRoutes = require('./routes/responses');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/quizzes', quizzesRoutes);
 app.use('/api/questions', questionsRoutes);
+app.use('/api/studentResponses', studentResponsesRoutes);
 app.use('/api/responses', responsesRoutes);
 
 const PORT = process.env.PORT || 4000;

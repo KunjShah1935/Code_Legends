@@ -40,9 +40,67 @@ router.get('/:quiz_id', authenticate, (req, res) => {
 router.get('/all/:quiz_id', authenticate, requireTeacher, (req, res) => {
   const db = req.app.locals.db;
   const { quiz_id } = req.params;
+
+  // Get all responses for this quiz
   const responses = db.prepare('SELECT * FROM responses WHERE quiz_id = ?').all(quiz_id);
-  responses.forEach(r => r.answers = JSON.parse(r.answers));
-  res.json(responses);
+
+  // Get questions for this quiz
+  const questions = db.prepare('SELECT * FROM questions WHERE quiz_id = ?').all(quiz_id);
+
+  // For each response, fetch user email and calculate score
+  const result = responses.map(r => {
+    const user = db.prepare('SELECT email FROM users WHERE id = ?').get(r.user_id);
+    const answers = JSON.parse(r.answers);
+    let score = 0;
+    for (let i = 0; i < Math.min(answers.length, questions.length); i++) {
+      const q = questions[i];
+      if (q && answers[i] === Number(q.correct_option)) {
+        score++;
+      }
+    }
+    return {
+      email: user ? user.email : 'Unknown',
+      score,
+      total_questions: questions.length,
+      submitted_at: r.submitted_at
+    };
+  });
+
+  res.json(result);
+});
+
+// Get all responses for a quiz (creator only: teacher or student)
+router.get('/creator/:quiz_id', authenticate, (req, res) => {
+  const db = req.app.locals.db;
+  const { quiz_id } = req.params;
+  // Check if the logged-in user is the creator of the quiz
+  const quiz = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(quiz_id);
+  if (!quiz || quiz.created_by !== req.user.id) {
+    return res.status(403).json({ error: 'Only the quiz creator can view these results.' });
+  }
+  // Get all responses for this quiz
+  const responses = db.prepare('SELECT * FROM responses WHERE quiz_id = ?').all(quiz_id);
+  // Get questions for this quiz
+  const questions = db.prepare('SELECT * FROM questions WHERE quiz_id = ?').all(quiz_id);
+  // For each response, fetch user email and calculate score
+  const result = responses.map(r => {
+    const user = db.prepare('SELECT email FROM users WHERE id = ?').get(r.user_id);
+    const answers = JSON.parse(r.answers);
+    let score = 0;
+    for (let i = 0; i < Math.min(answers.length, questions.length); i++) {
+      const q = questions[i];
+      if (q && answers[i] === Number(q.correct_option)) {
+        score++;
+      }
+    }
+    return {
+      email: user ? user.email : 'Unknown',
+      score,
+      total_questions: questions.length,
+      submitted_at: r.submitted_at
+    };
+  });
+  res.json(result);
 });
 
 module.exports = router; 

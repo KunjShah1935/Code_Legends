@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QuizIQ.com</title>
     <link rel="stylesheet" href="../../css/style1.css">
+    <style>
+        .quiz-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        
+        .result-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .result-card p {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -12,12 +41,20 @@
             <img src="/assets/logo.png" alt="Logo" class="logo" />
             <div class="nav-links">
                 <a href="dashboards.html" class="logo1">Dashboard</a>
+                <a href="myresults.html" class="logo1">My Results</a>
+                <a href="myquizzes.html" class="logo1">My Quizzes</a>
+                <a href="createquiz.html" class="logo1">Create Quiz</a>
                 <a href="../login.html" class="logo1">Logout</a>
             </div>
         </div>
     </header>
     <main class="main">
-        <div id="quiz-list"></div>
+        <div class="card">
+            <h3>Available Quizzes</h3>
+            <div id="quizzes-list">
+                <!-- Quizzes will be loaded here -->
+            </div>
+        </div>
     </main>
     <!-- Modal for Instructions -->
     <div class="modal" id="confirmModal">
@@ -65,13 +102,13 @@
         async function loadQuizzes() {
             const res = await fetch('http://localhost:4000/api/quizzes');
             const quizzes = await res.json();
-            const quizList = document.getElementById('quiz-list');
+            const quizList = document.getElementById('quizzes-list');
             quizList.innerHTML = '';
             quizzes.forEach(q => {
                 quizList.innerHTML += `
                 <div class="box">
                     <p><b>${q.title}</b></p>
-                    <p>${q.description || ''}</p>
+                    <p class="quiz-description">${q.description || ''}</p>
                     <div class="button">
                         <button class="button1" onclick="openModal('takequiz.html?quiz_id=${q.id}')">Start Quiz</button>
                     </div>
@@ -85,6 +122,53 @@
             if (confirm("Are you sure you want to logout?")) {
                 window.location.href = "../login.html";
             }
+        });
+        
+        // Load quizzes created by the logged-in student
+        async function loadMyQuizzes() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const res = await fetch('http://localhost:4000/api/quizzes/my', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const quizzes = await res.json();
+            const myQuizList = document.getElementById('my-quizzes-list');
+            myQuizList.innerHTML = '';
+            if (quizzes.length === 0) {
+                myQuizList.innerHTML = '<p>No quizzes created yet.</p>';
+                return;
+            }
+            quizzes.forEach(q => {
+                myQuizList.innerHTML += `
+                <div class=\"box\">
+                    <p><b>${q.title}</b></p>
+                    <p>${q.description || ''}</p>
+                    <div class=\"button\">
+                        <a href=\"addQuestion.html?quiz_id=${q.id}\" class=\"button1\">Add Question</a>
+                        <button class=\"button1\" onclick=\"copyQuizLink(${q.id})\">Copy Link</button>
+                    </div>
+                </div>`;
+            });
+        }
+        function copyQuizLink(quizId) {
+            const baseUrl = window.location.origin;
+            const shareUrl = `${baseUrl}/pages/student/takequiz.html?quiz_id=${quizId}`;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Quiz link copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Quiz link copied to clipboard!');
+            });
+        }
+        window.addEventListener('load', () => {
+            loadQuizzes();
+            loadMyQuizzes();
         });
     </script>
 </body>
