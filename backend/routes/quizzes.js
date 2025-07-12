@@ -12,16 +12,32 @@ const quizSchema = Joi.object({
 // Create a quiz (teachers and students)
 router.post('/', authenticate, async (req, res) => {
   const db = req.app.locals.db;
+  console.log('Received POST /quizzes request');
+  console.log('Request body:', req.body);
+
   const { error } = quizSchema.validate(req.body);
-  if (error) return res.status(400).json({ error: error.details[0].message });
+  if (error) {
+    console.log('Validation error:', error.details[0].message);
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
   const { title, description, time_per_question } = req.body;
   const created_by = req.user.id;
+  console.log('Creating quiz with:', { title, description, created_by, time_per_question });
+
   try {
-    const stmt = db.prepare('INSERT INTO quizzes (title, description, created_by, time_per_question) VALUES (?, ?, ?, ?)');
+    const stmt = db.prepare(
+      'INSERT INTO quizzes (title, description, created_by, time_per_question) VALUES (?, ?, ?, ?)'
+    );
     const info = stmt.run(title, description, created_by, time_per_question);
+    console.log('Insert successful, lastInsertRowid:', info.lastInsertRowid);
+
     const quiz = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(info.lastInsertRowid);
+    console.log('Retrieved quiz:', quiz);
+
     res.json(quiz);
   } catch (err) {
+    console.error('Database error:', err);
     res.status(500).json({ error: 'Failed to create quiz' });
   }
 });
